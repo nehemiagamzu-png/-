@@ -266,6 +266,16 @@ svg.ch{width:100%;display:block;overflow:visible}
   <span style="flex:1">אפשר התראות לקבל תזכורות</span>
   <button onclick="askNotif()">אפשר</button>
 </div>
+<div id="nb2" style="display:none;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:14px;margin:8px 16px 0;padding:10px 14px;flex-direction:column;gap:8px;font-size:13px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span>🔔</span>
+    <span style="flex:1;font-weight:600;color:#1e40af">התראות מופעלות</span>
+    <button onclick="sendTestNotif()" style="background:#2563eb;color:#fff;border:none;border-radius:9px;padding:6px 12px;font-family:Heebo,sans-serif;font-size:12px;font-weight:700;cursor:pointer">בדיקה</button>
+  </div>
+  <div style="font-size:11px;color:#3b82f6;line-height:1.5">
+    ⚠️ חשוב: התראות יגיעו רק כשהאפליקציה פתוחה (ולו ברקע). הגדר תזכורות ופתח את האפליקציה לפחות פעם ביום.
+  </div>
+</div>
 
 <!-- TODAY -->
 <div id="view-today" class="view active">
@@ -740,8 +750,15 @@ function tHtml(t,ds,chk){
 function toggleDone(id){
   const t=tasks.find(t=>t.id===id);if(!t)return;
   if(!t.completions)t.completions={};
-  const ds=todayStr();t.completions[ds]=!t.completions[ds];
-  save();renderToday();
+  const ds=todayStr(); t.completions[ds]=!t.completions[ds];
+  save(); renderToday();
+  // Cancel or reschedule triggered notification
+  navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>{
+    reg.getNotifications({includeTriggered:true}).then(ns=>{
+      ns.forEach(n=>{ if(n.tag==='sched-'+id+'-'+ds) n.close(); });
+    }).catch(()=>{});
+  }).catch(()=>{});
+  if(!t.completions[ds]) scheduleAllNotifs();
 }
 function delTask(id){
   const t = tasks.find(t=>t.id===id);
@@ -1168,159 +1185,173 @@ function saveTask(){
   if(editId){const i=tasks.findIndex(t=>t.id===editId);if(i>=0)tasks[i]=task;}
   else tasks.unshift(task);
   save();closeModal();render();
+  scheduleAllNotifs();
 }
 
 // ═══════════════════════════════════════════════════
-// NOTIFICATIONS — robust version
+// NOTIFICATIONS — Scheduled Triggers
 // ═══════════════════════════════════════════════════
 
-// Core: show notification via SW registration (most reliable)
-function sendNotif(title, body, tag, taskId, ds){
+function supportsTriggered(){
+  return typeof TimestampTrigger !== 'undefined';
+}
+
+// Schedule notifications for next 14 days using TimestampTrigger.
+// These fire even when the app/screen is off — OS handles delivery.
+async function scheduleAllNotifs(){
   if(Notification.permission !== 'granted') return;
+  if(!('serviceWorker' in navigator)) return;
 
-  const payload = {
-    type: 'SHOW_NOTIFICATION',
-    title, body,
-    tag:     tag  || 'task',
-    taskId:  taskId || null,
-    dateStr: ds    || null
-  };
+  let reg;
+  try { reg = await navigator.serviceWorker.ready; } catch(e){ return; }
 
-  // Best method: use SW registration directly (works even if controller not set yet)
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.ready
-      .then(reg => {
-        // Try postMessage to SW (SW shows notification)
-        if(reg.active){
-          reg.active.postMessage(payload);
-        } else {
-          // Fallback: show directly from page
-          reg.showNotification(title, {
-            body, icon:'./icon-192.png', badge:'./icon-192.png',
-            tag: payload.tag,
-            data:{ taskId, dateStr: ds }
-          });
-        }
-      })
-      .catch(() => {
-        // Last resort
-        try { new Notification(title, {body, tag: payload.tag}); } catch(e){}
-      });
-  } else {
-    try { new Notification(title, {body, tag: payload.tag}); } catch(e){}
+  // Cancel old scheduled notifications
+  try {
+    const existing = await reg.getNotifications({ includeTriggered: true });
+    existing.forEach(n => { if((n.tag||'').startsWith('sched-')) n.close(); });
+  } catch(e){}
+
+  if(!supportsTriggered()){
+    console.log('[Notif] No TimestampTrigger — interval fallback only');
+    return;
   }
+
+  const now = new Date();
+  let count = 0;
+
+  for(let d = 0; d < 14; d++){
+    const day = new Date();
+    day.setDate(day.getDate() + d);
+    day.setHours(0,0,0,0);
+    const ds = dateStr(day);
+
+    tasks.forEach(t => {
+      if(!t.notifTime) return;
+      if(!due(t, day)) return;
+      if(done(t, ds)) return;
+
+      const [h, m] = t.notifTime.split(':').map(Number);
+      const fireAt = new Date(day);
+      fireAt.setHours(h, m, 0, 0);
+      if(fireAt <= now) return;
+
+      const tag = 'sched-' + t.id + '-' + ds;
+      try {
+        reg.showNotification('\u23f0 ' + t.text, {
+          body:        t.category ? '\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4: ' + t.category : '\u05dc\u05d7\u05e5 \u05dc\u05e1\u05de\u05df \u05db\u05de\u05d5\u05e9\u05dc\u05dd',
+          icon:        './icon-192.png',
+          badge:       './icon-192.png',
+          tag,
+          showTrigger: new TimestampTrigger(fireAt.getTime()),
+          data:        { taskId: t.id, dateStr: ds },
+          actions:     [
+            { action:'done',    title:'\u2705 \u05d4\u05d5\u05e9\u05dc\u05dd' },
+            { action:'dismiss', title:'\u2715 \u05e1\u05d2\u05d5\u05e8' }
+          ]
+        });
+        count++;
+      } catch(e){ console.warn('Schedule err:', e); }
+    });
+  }
+  console.log('[Notif] Scheduled', count, 'notifications');
 }
 
-// Check if any tasks need notification right now
-// Called every 30s and on visibility change
-let _lastCheckedMinute = '';
+// Interval fallback (for when app is open and browser lacks TimestampTrigger)
+let _lastMin = '';
 function checkNotifs(){
   if(Notification.permission !== 'granted') return;
-  const now = new Date();
+  const now  = new Date();
   const hhmm = p2(now.getHours()) + ':' + p2(now.getMinutes());
-
-  // Skip if we already checked this minute
-  if(hhmm === _lastCheckedMinute) return;
-  _lastCheckedMinute = hhmm;
-
-  const ds = todayStr();
+  if(hhmm === _lastMin) return;
+  _lastMin = hhmm;
+  const ds    = todayStr();
   const fired = JSON.parse(localStorage.getItem('nf_'+ds) || '{}');
   let changed = false;
-
   tasks.forEach(t => {
     if(!t.notifTime || t.notifTime !== hhmm) return;
     if(!due(t, now)) return;
     if(fired[t.id] || done(t, ds)) return;
-
-    sendNotif(
-      '⏰ ' + t.text,
-      t.category ? 'קטגוריה: ' + t.category : 'לחץ לסמן כמושלם',
-      'task-' + t.id + '-' + ds,
-      t.id,
-      ds
-    );
+    sendNotif('\u23f0 '+t.text,
+      t.category ? '\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4: '+t.category : '\u05d9\u05d5\u05de\u05df \u05de\u05e9\u05d9\u05de\u05d5\u05ea',
+      'int-'+t.id+'-'+ds, t.id, ds);
     fired[t.id] = true;
     changed = true;
   });
-
   if(changed) localStorage.setItem('nf_'+ds, JSON.stringify(fired));
 }
 
+// Core sender
+function sendNotif(title, body, tag, taskId, ds){
+  if(Notification.permission !== 'granted') return;
+  navigator.serviceWorker.ready
+    .then(reg => reg.showNotification(title, {
+      body, icon:'./icon-192.png', badge:'./icon-192.png',
+      tag: tag||'task', vibrate:[200,100,200],
+      data:{ taskId:taskId||null, dateStr:ds||null },
+      actions: taskId ? [
+        { action:'done',    title:'\u2705 \u05d4\u05d5\u05e9\u05dc\u05dd' },
+        { action:'dismiss', title:'\u2715 \u05e1\u05d2\u05d5\u05e8' }
+      ] : []
+    }))
+    .catch(e => console.warn('[Notif]', e));
+}
+
+// Test button
+function sendTestNotif(){
+  if(Notification.permission !== 'granted'){
+    alert('\u05dc\u05d0 \u05d0\u05d5\u05e9\u05e8\u05d5 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea. \u05dc\u05d7\u05e5 "\u05d0\u05e4\u05e9\u05e8" \u05e7\u05d5\u05d3\u05dd.');
+    return;
+  }
+  navigator.serviceWorker.ready
+    .then(reg => reg.showNotification(
+      '\u2705 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u05e4\u05d5\u05e2\u05dc\u05d5\u05ea!',
+      {
+        body: supportsTriggered()
+          ? '\u05de\u05e2\u05d5\u05dc\u05d4! \u05d9\u05d2\u05d9\u05e2\u05d5 \u05d2\u05dd \u05db\u05e9\u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u05e1\u05d2\u05d5\u05e8\u05d4 \uD83C\uDF89'
+          : '\u05e2\u05d5\u05d1\u05d3 \u05db\u05e9\u05d4\u05d0\u05e4\u05dc\u05d9\u05e7\u05e6\u05d9\u05d4 \u05e4\u05ea\u05d5\u05d7\u05d4 \uD83D\uDC4D',
+        icon:'./icon-192.png', tag:'test-'+Date.now()
+      }
+    ))
+    .catch(e => alert('\u05e9\u05d2\u05d9\u05d0\u05d4: '+e.message));
+}
+
+function showNotifStatus(){
+  const perm = 'Notification' in window ? Notification.permission : 'none';
+  document.getElementById('nb').style.display  = perm==='default'?'flex':'none';
+  document.getElementById('nb2').style.display = perm==='granted'?'flex':'none';
+}
+
 function startNotifs(){
+  scheduleAllNotifs();
   checkNotifs();
-  // Check every 30 seconds (catches cases where 60s interval skips a minute)
   setInterval(checkNotifs, 30000);
 }
 
-// Show test notification immediately after permission granted
-function sendTestNotif(){
-  navigator.serviceWorker.ready.then(reg => {
-    if(reg.active){
-      reg.active.postMessage({
-        type:'SHOW_NOTIFICATION',
-        title:'✅ התראות פועלות!',
-        body:'כל התזכורות שלך יגיעו בזמן 🎉',
-        tag:'test-' + Date.now()
-      });
-    } else {
-      try { new Notification('✅ התראות פועלות!', {body:'הכל מוכן 🎉'}); } catch(e){}
-    }
-  }).catch(()=>{
-    try { new Notification('✅ התראות פועלות!', {body:'הכל מוכן 🎉'}); } catch(e){}
-  });
-}
-
-// MUST be called directly from button click (user gesture required)
 function askNotif(){
-  if(!('Notification' in window)){
-    alert('הדפדפן שלך לא תומך בהתראות');
+  if(!('Notification' in window)){ alert('\u05d4\u05d3\u05e4\u05d3\u05e4\u05df \u05dc\u05d0 \u05ea\u05d5\u05de\u05da \u05d1\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea'); return; }
+  if(Notification.permission==='granted'){ showNotifStatus(); startNotifs(); sendTestNotif(); return; }
+  if(Notification.permission==='denied'){
+    alert('\u05d7\u05e1\u05de\u05ea \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u05d1\u05e2\u05d1\u05e8.\n\u05db\u05d3\u05d9 \u05dc\u05d0\u05e4\u05e9\u05e8: \u05d4\u05d2\u05d3\u05e8\u05d5\u05ea Chrome \u2190 \u05d0\u05ea\u05e8\u05d9\u05dd \u2190 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u2190 \u05d0\u05e4\u05e9\u05e8');
     return;
   }
-  if(Notification.permission === 'granted'){
-    document.getElementById('nb').style.display = 'none';
-    startNotifs();
-    sendTestNotif();
-    return;
-  }
-  if(Notification.permission === 'denied'){
-    alert('חסמת התראות בעבר.\nכדי לאפשר:\nהגדרות Chrome ← אתרים ← התראות ← מצא את האתר ← אפשר');
-    return;
-  }
-  // requestPermission must be here — no await before it
   Notification.requestPermission().then(p => {
-    if(p === 'granted'){
-      document.getElementById('nb').style.display = 'none';
-      startNotifs();
-      sendTestNotif();
-    } else {
-      alert('לא אושרו התראות.\nניתן לאפשר בהגדרות הדפדפן.');
-    }
+    if(p==='granted'){ showNotifStatus(); startNotifs(); sendTestNotif(); }
+    else alert('\u05dc\u05d0 \u05d0\u05d5\u05e9\u05e8\u05d5 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea.');
   });
 }
 
 function initNotifs(){
   if(!('Notification' in window)) return;
-  if(Notification.permission === 'granted'){
-    startNotifs();
-    document.getElementById('nb').style.display = 'none';
-  } else if(Notification.permission !== 'denied'){
-    document.getElementById('nb').style.display = 'flex';
-  }
-  // Re-check when user returns to the tab
-  document.addEventListener('visibilitychange', () => {
-    if(!document.hidden) checkNotifs();
+  showNotifStatus();
+  if(Notification.permission==='granted') startNotifs();
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden){ checkNotifs(); scheduleAllNotifs(); }
   });
-  // Listen for MARK_DONE from SW (when app is already open)
   if(navigator.serviceWorker){
-    navigator.serviceWorker.addEventListener('message', event => {
-      if(!event.data || event.data.type !== 'MARK_DONE') return;
-      const { taskId, dateStr } = event.data;
-      const t = tasks.find(t => t.id === taskId);
-      if(t){
-        if(!t.completions) t.completions = {};
-        t.completions[dateStr] = true;
-        save(); render();
-      }
+    navigator.serviceWorker.addEventListener('message', ev=>{
+      if(!ev.data || ev.data.type!=='MARK_DONE') return;
+      const t=tasks.find(t=>t.id===ev.data.taskId);
+      if(t){ if(!t.completions)t.completions={}; t.completions[ev.data.dateStr]=true; save(); render(); }
     });
   }
 }

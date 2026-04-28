@@ -1,8 +1,9 @@
 /* ================================================
-   Service Worker — יומן משימות v6
+   Service Worker — יומן משימות v7
    ================================================ */
 
-const CACHE = 'tasks-pro-v6';
+const CACHE = 'tasks-pro-v7';
+const PENDING_STORE = 'pending-completions-v1';
 
 const FILES = [
   './index.html',
@@ -11,7 +12,7 @@ const FILES = [
   './icon-512.png'
 ];
 
-/* ── Install: cache all files immediately ── */
+/* ── Install ── */
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -21,18 +22,18 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── Activate: remove old caches, claim clients ── */
+/* ── Activate ── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE && k !== PENDING_STORE).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
 });
 
-/* ── Fetch: cache-first, fallback to network ── */
+/* ── Fetch ── */
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
@@ -50,62 +51,118 @@ self.addEventListener('fetch', event => {
   );
 });
 
+/* ── Store a pending completion in Cache so app can read it on open ── */
+async function storePendingCompletion(taskId, dateStr) {
+  try {
+    const cache = await caches.open(PENDING_STORE);
+    const key   = 'pending-' + taskId + '-' + dateStr;
+    await cache.put(
+      new Request(key),
+      new Response(JSON.stringify({ taskId, dateStr, ts: Date.now() }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    );
+  } catch(e) {
+    console.warn('[SW] storePendingCompletion error:', e);
+  }
+}
+
 /* ── Message from page → show notification ── */
 self.addEventListener('message', event => {
-  if (!event.data || event.data.type !== 'SHOW_NOTIFICATION') return;
+  if (!event.data) return;
 
-  const { title, body, tag, taskId, dateStr } = event.data;
+  if (event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag, taskId, dateStr } = event.data;
+    event.waitUntil(
+      self.registration.showNotification(title || '⏰ תזכורת', {
+        body:    body || '',
+        icon:    './icon-192.png',
+        badge:   './icon-192.png',
+        tag:     tag  || 'task',
+        vibrate: [200, 100, 200],
+        requireInteraction: false,
+        actions: taskId ? [
+          { action: 'done',    title: '✅ הושלם' },
+          { action: 'dismiss', title: '✕ סגור' }
+        ] : [],
+        data: { taskId, dateStr, url: self.location.origin + self.registration.scope + 'index.html' }
+      })
+    );
+  }
 
-  const actions = taskId ? [
-    { action: 'done',    title: '✅ סמן כמושלם' },
-    { action: 'dismiss', title: '✕ סגור' }
-  ] : [];
+  // App requests list of pending completions (called on app open)
+  if (event.data.type === 'GET_PENDING') {
+    event.waitUntil(
+      caches.open(PENDING_STORE).then(async cache => {
+        const keys = await cache.keys();
+        const pending = [];
+        for (const req of keys) {
+          const res  = await cache.match(req);
+          const data = await res.json();
+          pending.push(data);
+        }
+        // Send back to the requesting client
+        if (event.source) {
+          event.source.postMessage({ type: 'PENDING_LIST', pending });
+        }
+      }).catch(() => {})
+    );
+  }
 
-  event.waitUntil(
-    self.registration.showNotification(title || '⏰ תזכורת', {
-      body:    body || '',
-      icon:    './icon-192.png',
-      badge:   './icon-192.png',
-      tag:     tag  || 'task',
-      actions,
-      silent:  false,
-      vibrate: [200, 100, 200],
-      requireInteraction: false,
-      data:    { taskId, dateStr, url: './index.html' }
-    })
-  );
+  // App tells SW it processed a completion — remove from pending store
+  if (event.data.type === 'CLEAR_PENDING') {
+    const { taskId, dateStr } = event.data;
+    caches.open(PENDING_STORE).then(cache => {
+      cache.delete(new Request('pending-' + taskId + '-' + dateStr));
+    }).catch(() => {});
+  }
 });
 
-/* ── Notification clicked or action tapped ── */
+/* ── Notification click / action ── */
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  const { taskId, dateStr } = event.notification.data || {};
-  const base = './index.html';
+  const { taskId, dateStr, url } = event.notification.data || {};
+  // Build absolute URL — use SW scope as base
+  const appUrl = url || (self.location.origin + self.registration.scope + 'index.html');
 
   if (event.action === 'done' && taskId && dateStr) {
-    // Send MARK_DONE to open clients, or open with URL param
     event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-        for (const c of list) {
-          if (c.url.includes('index') || c.url.endsWith('/')) {
-            c.postMessage({ type: 'MARK_DONE', taskId, dateStr });
-            return c.focus();
-          }
+      (async () => {
+        // 1. Store completion in persistent cache — survives app restart
+        await storePendingCompletion(taskId, dateStr);
+
+        // 2. Try to notify any already-open clients immediately
+        const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of list) {
+          client.postMessage({ type: 'MARK_DONE', taskId, dateStr });
+          await client.focus();
+          return;
         }
-        return clients.openWindow(base + '?markDone=' + taskId + '&date=' + dateStr);
-      })
+
+        // 3. No open client — open app (it will read pending on init)
+        await clients.openWindow(appUrl);
+      })()
     );
     return;
   }
 
-  // Dismiss or default tap → just open app
+  // Default tap — open / focus app
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const c of list) {
-        if ('focus' in c) return c.focus();
+      for (const client of list) {
+        if ('focus' in client) return client.focus();
       }
-      return clients.openWindow(base);
+      return clients.openWindow(appUrl);
     })
   );
+});
+
+/* ── Periodic Sync (Android Chrome — delivers even when app closed) ── */
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'check-notifications') {
+    // The app will handle actual notification logic when it opens.
+    // SW can't access tasks in localStorage — nothing to do here.
+    console.log('[SW] Periodic sync fired');
+  }
 });

@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f2444">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="משימות">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>יומן משימות</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f6f9;
+  --surface:#ffffff;
+  --surface2:#eef1f6;
+  --navy:#0f2444;
+  --navy2:#1a3a6b;
+  --green:#059669;
+  --green-l:#d1fae5;
+  --red:#dc2626;
+  --red-l:#fee2e2;
+  --amber:#d97706;
+  --amber-l:#fef3c7;
+  --blue:#2563eb;
+  --blue-l:#dbeafe;
+  --sky:#0284c7;
+  --orange:#ea580c;
+  --text:#111827;
+  --text2:#4b5563;
+  --muted:#9ca3af;
+  --border:#e2e8f0;
+  --tab:64px;
+}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto}
+
+/* ── HEADER ── */
+#hdr{
+  background:linear-gradient(160deg,#0a1e40 0%,#1a3a6b 60%,#1e4d8c 100%);
+  color:#fff;
+  padding:14px 20px 16px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 3px 16px rgba(10,30,64,.5);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.hdr-left{display:flex;flex-direction:column;gap:2px}
+.hdr-date{font-size:11px;opacity:.55;letter-spacing:1px;text-transform:uppercase}
+.hdr-title{font-size:20px;font-weight:900;letter-spacing:-.2px;line-height:1.2}
+.hdr-streak{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:20px;padding:5px 12px;
+  display:flex;align-items:center;gap:5px;
+  font-size:13px;font-weight:700;
+  flex-shrink:0;
+}
+
+/* ── QUOTE ── */
+.quote{
+  background:#fff;
+  border-right:4px solid var(--amber);
+  border-radius:12px;
+  padding:13px 16px;margin:14px 16px 0;
+  animation:fi .5s ease;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);
+}
+.qt{font-size:14px;font-weight:500;color:#78350f;line-height:1.65}
+.qa{font-size:12px;color:var(--amber);margin-top:4px;font-weight:600}
+
+/* ── VIEWS ── */
+.view{display:none;padding-bottom:calc(var(--tab) + 24px)}
+.view.active{display:block}
+.sec{
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  padding:20px 16px 8px;
+}
+
+/* ── STATS ── */
+.srow{display:flex;gap:10px;padding:0 16px 4px}
+.sc{
+  flex:1;background:var(--surface);border-radius:14px;
+  padding:14px 10px;text-align:center;
+  border:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+}
+.sn{font-size:28px;font-weight:900;line-height:1}
+.sl{font-size:11px;color:var(--muted);margin-top:4px;font-weight:500}
+
+/* ── PROGRESS ── */
+.pw{padding:10px 16px}
+.ph{display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:7px;font-weight:600}
+.pb{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--green),#10b981);border-radius:4px;transition:width .5s ease}
+
+/* ── TASKS ── */
+.ti{
+  background:var(--surface);border-radius:14px;margin:6px 16px;
+  padding:13px 14px;display:flex;align-items:flex-start;gap:12px;
+  border:1px solid var(--border);
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+  transition:opacity .25s,transform .15s;animation:si .25s ease;
+}
+@keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.ti:active{transform:scale(.99)}
+.ti.done{opacity:.45}
+.ti.fav{border-color:var(--amber);border-width:2px}
+.cb{
+  width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--border);background:transparent;
+  cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;transition:all .2s;margin-top:1px;
+}
+.ti.done .cb{background:var(--green);border-color:var(--green);color:#fff}
+.fav-btn{background:transparent;border:none;cursor:pointer;flex-shrink:0;font-size:19px;line-height:1;padding:2px;margin-top:0;transition:transform .2s;opacity:.3}
+.fav-btn.on{opacity:1;transform:scale(1.1)}
+.tb{flex:1;min-width:0}
+.tt{font-size:14px;font-weight:600;line-height:1.45;color:var(--text)}
+.ti.done .tt{text-decoration:line-through;color:var(--muted);font-weight:400}
+.tm{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.tag.high{background:var(--red-l);color:var(--red)}
+.tag.mid{background:#ffedd5;color:var(--orange)}
+.tag.low{background:var(--blue-l);color:var(--blue)}
+.tag.cat{background:var(--navy);color:#fff;font-size:10px}
+.tag.rec{background:var(--surface2);color:var(--text2)}
+.nt{font-size:11px;color:var(--muted)}
+.ta{display:flex;align-items:center;flex-shrink:0;gap:2px}
+.ib{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px;font-size:16px;transition:all .15s;line-height:1}
+.ib.del:hover{color:var(--red);background:var(--red-l)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.ei{font-size:44px;margin-bottom:12px;opacity:.35}
+.et{font-size:15px;line-height:1.7}
+
+/* ── FILTER CHIPS ── */
+.fbar{display:flex;gap:7px;padding:0 16px 6px;overflow-x:auto}
+.fbar::-webkit-scrollbar{display:none}
+.fc{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-family:'Heebo',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.fc.active{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* ── FAB ── */
+#fab{
+  position:fixed;bottom:calc(var(--tab) + 14px);left:50%;transform:translateX(-50%);
+  background:var(--green);color:white;border:none;border-radius:30px;
+  padding:14px 30px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;box-shadow:0 4px 18px rgba(5,150,105,.38);
+  transition:all .2s;z-index:90;letter-spacing:.3px;
+}
+#fab:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 6px 24px rgba(5,150,105,.45)}
+
+/* ── TAB BAR ── */
+#tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--tab);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.tb2{flex:1;background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-family:'Heebo',sans-serif;color:var(--muted);font-size:10px;font-weight:500;transition:color .2s}
+.tb2.active{color:var(--navy)}
+.ti2{font-size:20px}
+
+/* ── MODAL ── */
+#mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+#mo.open{display:flex}
+#md{background:var(--surface);border-radius:24px 24px 0 0;padding:22px 20px 40px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;animation:su .3s cubic-bezier(.16,1,.3,1)}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mh{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.mt{font-size:20px;font-weight:900;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;color:var(--navy)}
+.fg{margin-bottom:16px;position:relative}
+.fl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;display:block;margin-bottom:7px;text-transform:uppercase}
+.fi2{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;font-family:'Heebo',sans-serif;font-size:15px;color:var(--text);outline:none;transition:border-color .2s}
+.fi2:focus{border-color:var(--navy)}
+
+/* ── SUGGESTIONS ── */
+#sb{display:none;background:var(--surface);border:1.5px solid var(--blue);border-radius:13px;padding:11px;margin-top:7px;box-shadow:0 6px 24px rgba(37,99,235,.12);animation:fi .18s ease}
+#sb.vis{display:block}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.slbl{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase}
+.sc2{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0;line-height:1}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{background:var(--blue-l);color:var(--blue);border:1.5px solid #93c5fd;border-radius:20px;padding:6px 13px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+.chip:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+.cat-chip{background:var(--surface2);color:var(--text2);border:1.5px solid var(--border);border-radius:20px;padding:5px 12px;font-family:'Heebo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:5px}
+.cat-chip.sel{background:var(--navy);color:#fff;border-color:var(--navy)}
+.cat-chip .del-c{font-size:11px;opacity:.7;margin-right:2px}
+.chip.sel-chip{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ── FORM ── */
+.rg{display:flex;gap:8px}
+.ro{flex:1;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--text2)}
+.ro.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+.dg{display:flex;gap:7px}
+.dc{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;color:var(--text2)}
+.dc.sel{border-color:var(--green);background:var(--green);color:#fff}
+.pr{display:flex;gap:8px}
+.pb2{flex:1;padding:10px;border-radius:12px;border:2px solid var(--border);background:var(--surface2);font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--text2)}
+.pb2.sh{border-color:var(--red);background:var(--red-l);color:var(--red)}
+.pb2.sm{border-color:var(--orange);background:#ffedd5;color:var(--orange)}
+.pb2.sl{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
+.sub{width:100%;background:var(--navy);color:#fff;border:none;border-radius:14px;padding:15px;font-family:'Heebo',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-top:10px;letter-spacing:.3px;transition:background .2s}
+.sub:hover{background:var(--navy2)}
+
+/* ── CHARTS ── */
+.cw{background:var(--surface);border-radius:16px;margin:8px 16px;padding:16px;border:1px solid var(--border);box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.ct{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.cs{font-size:12px;color:var(--muted);margin-bottom:14px}
+svg.ch{width:100%;display:block;overflow:visible}
+.leg{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.br{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.br:last-child{border-bottom:none}
+.db{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.bi{flex:1}
+.bn{font-size:13px;font-weight:600;color:var(--text)}
+.bs{font-size:11px;color:var(--muted);margin-top:2px}
+.bp{font-size:17px;font-weight:900}
+
+/* ── ANALYSIS ── */
+.asel{padding:4px 16px 0;display:flex;flex-direction:column;gap:10px}
+.sr{display:flex;gap:7px;overflow-x:auto}
+.sr::-webkit-scrollbar{display:none}
+.sc3{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:7px 16px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.sc3.active{background:var(--navy);border-color:var(--navy);color:#fff}
+.pc{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:5px 14px;font-family:'Heebo',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.pc.active{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.ssw{padding:6px 16px 0;display:none}
+.ssw.vis{display:block}
+.ssl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase}
+.ss{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;font-family:'Heebo',sans-serif;font-size:14px;color:var(--text);outline:none;cursor:pointer}
+
+/* ── NOTIF BANNER ── */
+#nb{background:var(--amber-l);border:1.5px solid #fcd34d;border-radius:14px;margin:12px 16px 0;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500}
+#nb button{margin-right:auto;background:var(--amber);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
+/* ── PWA BANNER ── */
+.pwa-b{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#fff;border:1.5px solid var(--navy);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-family:'Heebo',sans-serif;font-size:13px;z-index:500;box-shadow:0 6px 24px rgba(0,0,0,.14);max-width:440px;width:calc(100% - 32px)}
+
+/* ── CONFIRM DIALOG ── */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:flex-end;justify-content:center}
+.confirm-overlay.open{display:flex}
+.confirm-box{background:#fff;border-radius:22px 22px 0 0;padding:28px 22px 38px;width:100%;max-width:480px;text-align:center}
+.confirm-title{font-size:18px;font-weight:900;color:var(--text);margin-bottom:8px}
+.confirm-msg{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.confirm-btns{display:flex;gap:10px}
+.confirm-cancel{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:13px;padding:14px;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:var(--text2);cursor:pointer}
+.confirm-ok{flex:1;background:var(--red);border:none;border-radius:13px;padding:14px;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="hdr-left">
+    <div class="hdr-date" id="hdr-date"></div>
+    <div class="hdr-title">יומן משימות ✅</div>
+  </div>
+  <div class="hdr-streak" id="hdr-streak"></div>
+</div>
+
+<div id="nb" style="display:none">
+  <span>🔔</span>
+  <span style="flex:1">אפשר התראות לקבל תזכורות</span>
+  <button onclick="askNotif()">אפשר</button>
+</div>
+<div id="nb2" style="display:none;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:14px;margin:8px 16px 0;padding:12px 14px;flex-direction:column;gap:10px;font-size:13px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span>🔔</span>
+    <span style="flex:1;font-weight:700;color:#1e40af">התראות מופעלות</span>
+    <button onclick="sendTestNotif()" style="background:#2563eb;color:#fff;border:none;border-radius:9px;padding:6px 12px;font-family:Heebo,sans-serif;font-size:12px;font-weight:700;cursor:pointer">שלח בדיקה</button>
+  </div>
+  <div id="notif-diag" style="font-size:11px;color:#1e40af;line-height:1.8;background:#eff6ff;border-radius:8px;padding:8px 10px"></div>
+</div>
+
+<!-- TODAY -->
+<div id="view-today" class="view active">
+  <div id="quote-wrap"></div>
+  <div class="sec">סטטיסטיקות היום</div>
+  <div class="srow" id="today-stats"></div>
+  <div class="pw" id="today-prog"></div>
+  <div class="sec">משימות להיום</div>
+  <div id="today-list"></div>
+</div>
+
+<!-- ALL TASKS -->
+<div id="view-tasks" class="view">
+  <div class="sec">כל המשימות</div>
+  <div class="fbar">
+    <button class="fc active" onclick="setTF('all',this)">הכל</button>
+    <button class="fc" onclick="setTF('daily',this)">יומי</button>
+    <button class="fc" onclick="setTF('weekly',this)">שבועי</button>
+    <button class="fc" onclick="setTF('monthly',this)">חודשי</button>
+    <button class="fc" onclick="setTF('high',this)">🔴 דחוף</button>
+  </div>
+  <div id="all-list"></div>
+</div>
+
+<!-- WEEKLY -->
+<div id="view-weekly" class="view">
+  <div class="sec">סיכום 7 ימים אחרונים</div>
+  <div class="srow" id="w-stats"></div>
+  <div class="cw">
+    <div class="ct">השלמה יומית — שבוע אחרון</div>
+    <svg id="w-chart" class="ch" viewBox="0 0 340 160" height="160"></svg>
+    <div class="leg">
+      <div class="li"><div class="ld" style="background:var(--teal)"></div>הושלם</div>
+      <div class="li"><div class="ld" style="background:var(--border)"></div>לא הושלם</div>
+    </div>
+  </div>
+  <div class="cw"><div class="ct">פירוט לפי יום</div><div id="w-break"></div></div>
+</div>
+
+<!-- MONTHLY -->
+<div id="view-monthly" class="view">
+  <div class="sec">סיכום 30 ימים אחרונים</div>
+  <div class="srow" id="m-stats"></div>
+  <div class="cw"><div class="ct">אחוז השלמה כולל</div><svg id="m-pie" class="ch" viewBox="0 0 300 180" height="180"></svg></div>
+  <div class="cw">
+    <div class="ct">השלמה לפי שבוע</div>
+    <svg id="m-bar" class="ch" viewBox="0 0 300 160" height="160"></svg>
+    <div class="leg">
+      <div class="li"><div class="ld" style="background:var(--teal)"></div>הושלם</div>
+      <div class="li"><div class="ld" style="background:var(--border)"></div>לא הושלם</div>
+    </div>
+  </div>
+  <div class="cw"><div class="ct">פירוט שבועי</div><div id="m-break"></div></div>
+</div>
+
+
+<!-- ANALYSIS -->
+<div id="view-analysis" class="view">
+  <div class="sec">ניתוח גרפי מתקדם</div>
+  <div class="asel">
+    <div class="sr">
+      <button class="sc3 active" onclick="setScope('all',this)">🌐 הכל</button>
+      <button class="sc3" onclick="setScope('category',this)">🗂 קטגוריה</button>
+      <button class="sc3" onclick="setScope('task',this)">🎯 משימה</button>
+      <button class="sc3" onclick="setScope('fav',this)">⭐ מועדפים</button>
+    </div>
+    <div class="sr">
+      <button class="pc active" onclick="setPeriod(7,this)">7 ימים</button>
+      <button class="pc" onclick="setPeriod(14,this)">14 ימים</button>
+      <button class="pc" onclick="setPeriod(30,this)">30 ימים</button>
+    </div>
+  </div>
+  <div class="ssw" id="task-sw"><div class="ssl">בחר משימה</div><select class="ss" id="task-sel" onchange="renderA()"></select></div>
+  <div class="ssw" id="cat-sw"><div class="ssl">בחר קטגוריה</div><select class="ss" id="cat-sel" onchange="renderA()"></select></div>
+  <div id="a-content"></div>
+</div>
+
+<button id="fab" onclick="openModal()">+ משימה חדשה</button>
+
+<div id="tabs">
+  <button class="tb2 active" onclick="go('today',this)"><span class="ti2">📋</span><span>היום</span></button>
+  <button class="tb2" onclick="go('tasks',this)"><span class="ti2">✅</span><span>משימות</span></button>
+  <button class="tb2" onclick="go('weekly',this)"><span class="ti2">📊</span><span>שבועי</span></button>
+  <button class="tb2" onclick="go('monthly',this)"><span class="ti2">📅</span><span>חודשי</span></button>
+  <button class="tb2" onclick="go('analysis',this)"><span class="ti2">📈</span><span>ניתוח</span></button>
+</div>
+
+<!-- MODAL -->
+<div id="mo" onclick="closeBg(event)">
+  <div id="md">
+    <div class="mh"></div>
+    <div class="mt">
+      <span id="m-title">משימה חדשה</span>
+      <button class="ib" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- SECTION 1: CATEGORY PICKER -->
+    <div class="fg">
+      <label class="fl" style="margin-bottom:8px">1. בחר קטגוריה</label>
+      <div id="cat-grid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div id="new-cat-row" style="display:flex;gap:8px;margin-top:10px">
+        <input class="fi2" id="new-cat-inp" placeholder="+ הוסף קטגוריה חדשה..." autocomplete="off"
+          style="flex:1;font-size:13px"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addCatFromInput()}">
+        <button onclick="addCatFromInput()"
+          style="background:var(--accent);color:#fff;border:none;border-radius:11px;
+                 padding:0 14px;font-family:Heebo,sans-serif;font-size:14px;
+                 font-weight:700;cursor:pointer;flex-shrink:0">הוסף</button>
+      </div>
+    </div>
+
+    <!-- SECTION 2: TASK SUGGESTIONS — appears after category selected -->
+    <div id="task-section" style="display:none">
+      <div style="height:1px;background:var(--border);margin:4px 0 16px"></div>
+      <label class="fl" style="margin-bottom:10px">2. בחר משימה</label>
+      <div id="task-sugg-chips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px"></div>
+      <label class="fl" style="margin-bottom:6px;font-size:10px">או הקלד משימה אחרת</label>
+      <input class="fi2" id="f-text" placeholder="שם המשימה..." autocomplete="off" oninput="onInput(this.value);showDetailsOnType()">
+      <div id="sb">
+        <div class="sh">
+          <span class="slbl" id="slbl">הצעות</span>
+          <button class="sc2" onclick="hideSug()">✕</button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: DETAILS — appears after task picked/typed -->
+    <div id="details-section" style="display:none">
+      <div style="height:1px;background:var(--border);margin:4px 0 16px"></div>
+      <label class="fl" style="margin-bottom:10px">3. פרטים</label>
+      <div class="fg">
+        <label class="fl">עדיפות</label>
+        <div class="pr">
+          <button class="pb2" id="p-h" onclick="setPri('high')">🔴 גבוהה</button>
+          <button class="pb2 sm" id="p-m" onclick="setPri('mid')">🟠 בינונית</button>
+          <button class="pb2" id="p-l" onclick="setPri('low')">🔵 נמוכה</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">תדירות</label>
+        <div class="rg">
+          <div class="ro sel" id="r-daily" onclick="setRec('daily')">יומי</div>
+          <div class="ro" id="r-weekly" onclick="setRec('weekly')">שבועי</div>
+          <div class="ro" id="r-monthly" onclick="setRec('monthly')">חודשי</div>
+        </div>
+      </div>
+      <div class="fg" id="g-days" style="display:none">
+        <label class="fl">ימים בשבוע</label>
+        <div class="dg">
+          <div class="dc" data-d="0" onclick="toggleDay(0)">א׳</div>
+          <div class="dc" data-d="1" onclick="toggleDay(1)">ב׳</div>
+          <div class="dc" data-d="2" onclick="toggleDay(2)">ג׳</div>
+          <div class="dc" data-d="3" onclick="toggleDay(3)">ד׳</div>
+          <div class="dc" data-d="4" onclick="toggleDay(4)">ה׳</div>
+          <div class="dc" data-d="5" onclick="toggleDay(5)">ו׳</div>
+          <div class="dc" data-d="6" onclick="toggleDay(6)">ש׳</div>
+        </div>
+      </div>
+      <div class="fg" id="g-dom" style="display:none">
+        <label class="fl">יום בחודש</label>
+        <input class="fi2" type="number" id="f-dom" min="1" max="31" value="1">
+      </div>
+      <div class="fg">
+        <label class="fl">⏰ שעת התראה</label>
+        <input class="fi2" type="time" id="f-time" value="08:00">
+      </div>
+      <input type="hidden" id="f-cat">
+      <button class="sub" onclick="saveTask()">💾 שמור משימה</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM CONFIRM DIALOG -->
+<div class="confirm-overlay" id="conf-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="conf-title">מחיקה</div>
+    <div class="confirm-msg" id="conf-msg">בטוח למחוק?</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">ביטול</button>
+      <button class="confirm-ok" id="conf-ok">מחק</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── STATE ──────────────────────────────────────────────
+let tasks = JSON.parse(localStorage.getItem('tpv3')||'[]');
+let fPri='mid', fRec='daily', fDays=[], editId=null;
+let tFilter='all', aScope='all', aPeriod=7, curTab='today';
+
+// ── CONSTS ─────────────────────────────────────────────
+const DS=['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const DF=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const MO=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const DC=['#059669','#2563eb','#dc2626','#d97706','#7c3aed','#0f2444','#0284c7','#ea580c'];
+const PL={high:'גבוהה',mid:'בינונית',low:'נמוכה'};
+
+const QUOTES=[
+  {t:'הצלחה היא סכום של מאמצים קטנים שחוזרים על עצמם יום אחרי יום.',a:'רוברט קולייר'},
+  {t:'הדרך היחידה לעשות עבודה נהדרת היא לאהוב את מה שאתה עושה.',a:'סטיב ג׳ובס'},
+  {t:'אל תחכה עד שהכל יהיה מושלם. התחל עכשיו, שפר בדרך.',a:''},
+  {t:'כל הגדולים שהיו פעם — היו פעם מישהו שפשוט התחיל.',a:''},
+  {t:'משמעת היא הגשר בין המטרות להישגים.',a:'ג׳ים רוהן'},
+  {t:'מה שאתה עושה כל יום חשוב יותר ממה שאתה עושה מדי פעם.',a:''},
+  {t:'הצלחה אינה סופית, כישלון אינו קטלני — האומץ להמשיך הוא מה שחשוב.',a:'ווינסטון צ׳רצ׳יל'},
+  {t:'לא צריך להיות גדול כדי להתחיל, אבל צריך להתחיל כדי להיות גדול.',a:''},
+  {t:'המטרה שלך צריכה להיות גדולה מהפחד שלך.',a:''},
+  {t:'הבדל בין חלום למציאות הוא פעולה.',a:''},
+  {t:'הרגלים קטנים ועקביים עושים שינויים גדולים.',a:''},
+  {t:'אל תשווה את עצמך לאחרים. השתפר בהשוואה לעצמך של אתמול.',a:''},
+  {t:'בכל יום יש לך הזדמנות להיות טוב יותר מאתמול.',a:''},
+  {t:'עשה היום מה שאחרים לא רוצים, וחיה מחר כפי שאחרים לא יכולים.',a:''},
+  {t:'חיים טובים נבנים יום אחרי יום, החלטה קטנה אחרי החלטה קטנה.',a:''},
+  {t:'כל צעד קטן לעבר המטרה חשוב, גם אם הוא נראה זעיר.',a:''},
+  {t:'ההצלחה אינה נמדדת בכמה פעמים נפלת, אלא בכמה פעמים קמת.',a:''},
+  {t:'כוחך גדול ממה שאתה חושב. המחסום היחיד הוא הראש.',a:''},
+  {t:'הכי חשוב זה לא להיכשל — אלא לקום אחרי כל נפילה.',a:''},
+  {t:'אתה לא צריך להיות מושלם כדי להיות מדהים.',a:''},
+];
+
+const SUGG=[
+  {kw:['אימון','כושר','חדר כושר'],lbl:'💪 אימון',cat:'כושר',
+   items:['אימון כוח','אימון רגליים','אימון בטן','אימון גב','אימון כתפיים','אימון חזה','HIIT 20 דקות','אימון פונקציונלי']},
+  {kw:['ריצה','לרוץ'],lbl:'🏃 ריצה',cat:'כושר',
+   items:['ריצה 5 ק"מ','ריצה 10 ק"מ','ריצה קלה 20 דקות','ריצה אינטרוולים','ריצת בוקר']},
+  {kw:['יוגה','פילאטיס','מתיחות'],lbl:'🧘 גמישות',cat:'בריאות',
+   items:['יוגה 30 דקות','יוגה בוקר','פילאטיס','מתיחות 10 דקות','מדיטציה 10 דקות']},
+  {kw:['שחייה','בריכה'],lbl:'🏊 שחייה',cat:'כושר',
+   items:['שחייה 1 ק"מ','שחיית חופשית','30 דקות בריכה']},
+  {kw:['אופניים','רכיבה','ספינינג'],lbl:'🚴 רכיבה',cat:'כושר',
+   items:['רכיבה 30 דקות','ספינינג','רכיבת בוקר']},
+  {kw:['צחצוח','שיניים'],lbl:'🦷 היגיינה',cat:'היגיינה',
+   items:['צחצוח שיניים בוקר','צחצוח שיניים ערב','חוט דנטלי','שטיפת פה']},
+  {kw:['מקלחת','אמבטיה'],lbl:'🚿 ניקיון גוף',cat:'היגיינה',
+   items:['מקלחת בוקר','מקלחת ערב','אמבטיה מרגיעה','גילוח']},
+  {kw:['עור','קרם','טיפוח'],lbl:'🧴 טיפוח',cat:'טיפוח',
+   items:['קרם פנים','קרם גוף','סאנסקרין SPF','מסכת פנים']},
+  {kw:['מים','שתייה'],lbl:'💧 שתייה',cat:'תזונה',
+   items:['8 כוסות מים','שייק חלבון','מיץ טרי','תה ירוק']},
+  {kw:['תזונה','אוכל','ירקות'],lbl:'🥗 תזונה',cat:'תזונה',
+   items:['5 מנות ירקות','ארוחת בוקר בריאה','2 מנות פירות','הכנת צהריים']},
+  {kw:['ויטמין','תוסף'],lbl:'💊 תוספים',cat:'תזונה',
+   items:['ויטמין D','ויטמין B12','אומגה 3','מגנזיום']},
+  {kw:['עבודה','משרד'],lbl:'💼 עבודה',cat:'עבודה',
+   items:['בדיקת אימיילים','עדכון משימות','דוח שבועי','שיחת לקוח']},
+  {kw:['לימוד','ללמוד'],lbl:'📚 לימוד',cat:'לימוד',
+   items:['לימוד 30 דקות','קריאת פרק','פתרון תרגילים','שיעורי בית']},
+  {kw:['קריאה','ספר'],lbl:'📖 קריאה',cat:'לימוד',
+   items:['קריאת ספר 20 דקות','קריאת מאמר','20 עמודים']},
+  {kw:['אנגלית','שפה','duolingo'],lbl:'🗣 שפות',cat:'לימוד',
+   items:['Duolingo 10 דקות','אוצר מילים','האזנה לאנגלית']},
+  {kw:['ניקיון','לנקות'],lbl:'🧹 ניקיון',cat:'בית',
+   items:['ניקיון חדר','ניקיון מטבח','שאיבת אבק','קרצוף רצפה']},
+  {kw:['כביסה'],lbl:'👕 כביסה',cat:'בית',
+   items:['הכנסת כביסה','קיפול כביסה','גיהוץ']},
+  {kw:['קניות','סופר'],lbl:'🛒 קניות',cat:'בית',
+   items:['קניות סופרמרקט','רשימת קניות']},
+  {kw:['שינה','לישון'],lbl:'😴 שינה',cat:'בריאות',
+   items:['שינה ב-22:00','קימה ב-6:00','שנת צהריים 20 דקות']},
+  {kw:['מדיטציה','נשימה'],lbl:'🧘 מיינדפולנס',cat:'בריאות',
+   items:['מדיטציה 10 דקות','נשימה עמוקה','כתיבת יומן','הכרת תודה']},
+  {kw:['כסף','תקציב'],lbl:'💰 כספים',cat:'כספים',
+   items:['עדכון תקציב','תשלום חשבונות','חסכון חודשי']},
+  {kw:['מוזיקה','גיטרה','פסנתר'],lbl:'🎵 מוזיקה',cat:'יצירה',
+   items:['נגינה 20 דקות','תרגול גיטרה','שיר חדש']},
+  {kw:['ציור','אמנות'],lbl:'🎨 יצירה',cat:'יצירה',
+   items:['ציור 20 דקות','סקיצה יומית']},
+  {kw:['חברים','חבר'],lbl:'👫 חברים',cat:'חברתי',
+   items:['שיחה עם חבר','פגישת חברים','הודעה לחבר ישן']},
+  {kw:['משפחה','הורים'],lbl:'👨‍👩‍👧 משפחה',cat:'חברתי',
+   items:['שיחה עם הורים','בילוי עם ילדים','ארוחה משפחתית']},
+
+  // ─── יהדות ───────────────────────────────────────────────
+  {kw:['תפילה','להתפלל','שחרית','מנחה','ערבית','מעריב'],lbl:'🕍 תפילה',cat:'יהדות',
+   items:['תפילת שחרית','תפילת מנחה','תפילת ערבית','תפילה עם מניין','תפילת מוסף','תפילת שחרית בזמן','תפילה בבית כנסת']},
+  {kw:['תורה','לימוד תורה','גמרא','משנה','פרשה','הלכה','דף יומי'],lbl:'📜 לימוד תורה',cat:'יהדות',
+   items:['דף יומי','פרשת השבוע','לימוד משנה','לימוד גמרא','חזרת הלכות','לימוד חומש','לימוד שולחן ערוך','חצות לילה — לימוד']},
+  {kw:['שבת','ערב שבת','קבלת שבת','הבדלה','קידוש'],lbl:'🕯 שבת',cat:'יהדות',
+   items:['הדלקת נרות שבת','קידוש','סעודת שבת','קבלת שבת בבית כנסת','הבדלה','עונג שבת','שינה של שבת','שלוש סעודות']},
+  {kw:['צדקה','מעשרות','נדבה','חסד'],lbl:'🤲 צדקה וחסד',cat:'יהדות',
+   items:['הפרשת מעשרות','נתינת צדקה','גמילות חסדים','ביקור חולים','הכנסת אורחים','עזרה לנזקק']},
+  {kw:['ברכה','ברכות','ברכת המזון','כוונה'],lbl:'🙏 ברכות',cat:'יהדות',
+   items:['ברכת המזון','ברכות השחר','ברכה לפני אוכל','ברכה אחרונה','ברכות קריאת שמע','תיקון חצות']},
+  {kw:['תשובה','כפרה','וידוי','מוסר'],lbl:'💭 עבודת המידות',cat:'יהדות',
+   items:['חשבון הנפש','לימוד מוסר','עבודה על מידה אחת','וידוי','תיקון עוון','קבלה לעתיד']},
+  {kw:['מזוזה','תפילין','ציצית','מצווה'],lbl:'✡️ קיום מצוות',cat:'יהדות',
+   items:['הנחת תפילין','לבישת ציצית','בדיקת מזוזות','כשרות — בדיקה','טבילת כלים','הכנת שבת']},
+  {kw:['פסוק','תהילים','תפילה אישית','בקשה'],lbl:'📖 תהילים ותפילה',cat:'יהדות',
+   items:['קריאת תהילים','עשרה פרקי תהילים','תפילה אישית','פרק תהילים ליום','שיר השירים','קריאת שמע על המיטה']},
+];
+
+// ── UTILS ──────────────────────────────────────────────
+function todayStr(){return dateStr(new Date())}
+function dateStr(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function p2(n){return String(n).padStart(2,'0')}
+function pastDays(n){return Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(n-1-i));return d})}
+function due(t,d){const r=t.recurrence;if(!r||r.type==='daily')return true;if(r.type==='weekly')return(r.days||[]).includes(d.getDay());if(r.type==='monthly')return r.dayOfMonth===d.getDate();return true}
+function done(t,ds){return!!(t.completions&&t.completions[ds])}
+function recLbl(t){const r=t.recurrence;if(!r||r.type==='daily')return'כל יום';if(r.type==='monthly')return'יום '+r.dayOfMonth+' בחודש';if(r.type==='weekly')return(r.days||[]).map(d=>DS[d]).join(' ');return''}
+function save(){localStorage.setItem('tpv3',JSON.stringify(tasks))}
+
+// ── CATEGORY MANAGEMENT ─────────────────────────────────────
+// Built-in categories (always present)
+const BUILTIN_CATS = ['יהדות','כושר','בריאות','היגיינה','טיפוח','תזונה','עבודה','לימוד','בית','כספים','יצירה','חברתי'];
+
+function loadCustomCats(){
+  return JSON.parse(localStorage.getItem('customCats')||'[]');
+}
+function saveCustomCats(arr){
+  localStorage.setItem('customCats', JSON.stringify(arr));
+}
+function allCats(){
+  const custom = loadCustomCats();
+  return [...BUILTIN_CATS, ...custom.filter(c=>!BUILTIN_CATS.includes(c))];
+}
+function addCustomCat(name){
+  name = name.trim();
+  if(!name) return;
+  const cats = loadCustomCats();
+  if(!cats.includes(name) && !BUILTIN_CATS.includes(name)){
+    cats.push(name);
+    saveCustomCats(cats);
+  }
+}
+function deleteCustomCat(name){
+  const cats = loadCustomCats().filter(c=>c!==name);
+  saveCustomCats(cats);
+}
+
+function renderCatPicker(){
+  const sel = document.getElementById('f-cat-sel');
+  const current = document.getElementById('f-cat').value.trim();
+  const cats = allCats();
+  // Build option groups
+  sel.innerHTML = '<option value="">── בחר קטגוריה ──</option>';
+  // Jewish first
+  const jewish = ['יהדות'];
+  const rest = cats.filter(c=>!jewish.includes(c));
+  const addGroup = (label, list) => {
+    const g = document.createElement('optgroup');
+    g.label = label;
+    list.forEach(c=>{
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if(c===current) o.selected = true;
+      g.appendChild(o);
+    });
+    sel.appendChild(g);
+  };
+  addGroup('✡️ יהדות', jewish);
+  addGroup('כל הקטגוריות', rest);
+  // Render chips for custom cats with delete option
+  const custom = loadCustomCats();
+  const chips = document.getElementById('cat-chips');
+  chips.innerHTML = custom.map(c =>
+    `<span class="cat-chip${c===current?' sel':''}" onclick="pickCat('${esc(c)}')">${esc(c)}<span class="del-c" onclick="removeCat(event,'${esc(c)}')">✕</span></span>`
+  ).join('');
+}
+
+function onCatSel(val){
+  if(!val) return;
+  document.getElementById('f-cat').value = val;
+  renderCatPicker();
+}
+function pickCat(name){
+  document.getElementById('f-cat').value = name;
+  document.getElementById('f-cat-sel').value = name;
+  renderCatPicker();
+}
+function removeCat(e, name){
+  e.stopPropagation();
+  if(!confirm('למחוק קטגוריה "'+name+'"?')) return;
+  deleteCustomCat(name);
+  if(document.getElementById('f-cat').value === name) document.getElementById('f-cat').value='';
+  renderCatPicker();
+}
+function showAddCat(){
+  const inp = document.getElementById('f-cat');
+  inp.style.display = inp.style.display==='none'?'block':'none';
+  if(inp.style.display==='block'){
+    inp.value=''; inp.focus();
+    inp.onkeydown = e=>{
+      if(e.key==='Enter'){
+        const v=inp.value.trim();
+        if(v){ addCustomCat(v); pickCat(v); inp.style.display='none'; renderCatPicker(); }
+      }
+    };
+  }
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ── SUGGESTIONS ────────────────────────────────────────
+function onInput(v){
+  v=v.trim().toLowerCase();
+  const box=document.getElementById('sb');
+  if(!v){box.classList.remove('vis');return}
+  const m=SUGG.filter(g=>g.kw.some(k=>k.includes(v)||v.includes(k))||g.items.some(i=>i.toLowerCase().includes(v)));
+  if(!m.length){box.classList.remove('vis');return}
+  const all=[...new Set(m.flatMap(g=>g.items.filter(i=>i.toLowerCase().includes(v)).concat(g.items.filter(i=>!i.toLowerCase().includes(v)))))].slice(0,14);
+  document.getElementById('slbl').textContent=m.length===1?m[0].lbl:'💡 הצעות';
+  document.getElementById('chips').innerHTML=all.map(x=>`<button class="chip" data-t="${esc(x)}" data-c="${esc(m[0]?.cat||'')}" onclick="pick(this)">${esc(x)}</button>`).join('');
+  box.classList.add('vis');
+}
+function pick(el){
+  document.getElementById('f-text').value=el.dataset.t;
+  hideSug();
+}
+function hideSug(){document.getElementById('sb').classList.remove('vis')}
+
+// ── HEADER & QUOTE ─────────────────────────────────────
+function renderHeader(){
+  const d=new Date();
+  document.getElementById('hdr-date').textContent=
+    'יום '+DF[d.getDay()]+' | '+d.getDate()+' ב'+MO[d.getMonth()]+' '+d.getFullYear();
+  // Show streak in header
+  const s = streak();
+  const el = document.getElementById('hdr-streak');
+  if(s>0){
+    el.textContent='🔥 '+s+' יום';
+    el.style.display='flex';
+  } else {
+    el.style.display='none';
+  }
+}
+function renderQuote(){
+  const doy=Math.floor((new Date()-new Date(new Date().getFullYear(),0,0))/864e5);
+  const q=QUOTES[doy%QUOTES.length];
+  document.getElementById('quote-wrap').innerHTML=`<div class="quote"><div class="qt">״${esc(q.t)}״</div>${q.a?`<div class="qa">— ${esc(q.a)}</div>`:''}</div>`;
+}
+
+// ── TODAY ──────────────────────────────────────────────
+function renderToday(){
+  const today=new Date(),ds=todayStr();
+  const tt=tasks.filter(t=>due(t,today)),dn=tt.filter(t=>done(t,ds));
+  const total=tt.length,pct=total?Math.round(dn.length/total*100):0;
+  document.getElementById('today-stats').innerHTML=`
+    <div class="sc" style="border-top:3px solid var(--navy)"><div class="sn" style="color:var(--navy)">${total}</div><div class="sl">סה"כ היום</div></div>
+    <div class="sc" style="border-top:3px solid var(--red)"><div class="sn" style="color:var(--red)">${total-dn.length}</div><div class="sl">נותרו</div></div>
+    <div class="sc" style="border-top:3px solid var(--green)"><div class="sn" style="color:var(--green)">${dn.length}</div><div class="sl">הושלמו</div></div>`;
+  document.getElementById('today-prog').innerHTML=`
+    <div class="ph"><span>התקדמות יומית</span><span style="font-weight:700;color:var(--accent)">${pct}%</span></div>
+    <div class="pb"><div class="pf" style="width:${pct}%"></div></div>`;
+  const list=document.getElementById('today-list');
+  if(!tt.length){list.innerHTML=`<div class="empty"><div class="ei">🌟</div><div class="et">אין משימות להיום<br>לחץ + כדי להוסיף!</div></div>`;return}
+  const po={high:0,mid:1,low:2};
+  tt.sort((a,b)=>{const ad=done(a,ds)?1:0,bd=done(b,ds)?1:0;return ad!==bd?ad-bd:po[a.priority]-po[b.priority]});
+  list.innerHTML=tt.map(t=>tHtml(t,ds,true)).join('');
+}
+
+// ── TASK HTML ──────────────────────────────────────────
+function tHtml(t,ds,chk){
+  const dn=done(t,ds), isFav=!!t.fav;
+  return `<div class="ti ${dn?'done':''} ${isFav?'fav':''}">
+    ${chk?`<button class="cb" onclick="toggleDone(${t.id})">${dn?'✓':''}</button>`:'<div style="width:22px;flex-shrink:0"></div>'}
+    <div class="tb"><div class="tt">${esc(t.text)}</div>
+      <div class="tm">
+        <span class="tag ${t.priority}">${PL[t.priority]}</span>
+        ${t.category?`<span class="tag cat">${esc(t.category)}</span>`:''}
+        <span class="tag rec">🔄 ${recLbl(t)}</span>
+        ${t.notifTime?`<span class="nt">⏰ ${t.notifTime}</span>`:''}
+      </div>
+    </div>
+    <div class="ta" style="display:flex;align-items:center;gap:4px">
+      <button class="fav-btn ${isFav?'on':''}" onclick="toggleFav(${t.id})" title="מועדף">⭐</button>
+      <button class="ib del" onclick="delTask(${t.id})">🗑</button>
+    </div>
+  </div>`;
+}
+function toggleDone(id){
+  const t=tasks.find(t=>t.id===id);if(!t)return;
+  if(!t.completions)t.completions={};
+  const ds=todayStr(); t.completions[ds]=!t.completions[ds];
+  save(); renderToday();
+  // Cancel or reschedule triggered notification
+  navigator.serviceWorker&&navigator.serviceWorker.ready.then(reg=>{
+    reg.getNotifications({includeTriggered:true}).then(ns=>{
+      ns.forEach(n=>{ if(n.tag==='sched-'+id+'-'+ds) n.close(); });
+    }).catch(()=>{});
+  }).catch(()=>{});
+  if(!t.completions[ds]) scheduleAllNotifs();
+}
+function delTask(id){
+  const t = tasks.find(t=>t.id===id);
+  if(!t) return;
+  showConfirm(
+    'מחיקת משימה',
+    'בטוח שאתה רוצה למחוק את "'+t.text+'"?',
+    ()=>{ tasks=tasks.filter(t=>t.id!==id); save(); render(); }
+  );
+}
+
+function showConfirm(title, msg, onOk){
+  document.getElementById('conf-title').textContent = title;
+  document.getElementById('conf-msg').textContent = msg;
+  document.getElementById('conf-overlay').classList.add('open');
+  const okBtn = document.getElementById('conf-ok');
+  okBtn.onclick = ()=>{ closeConfirm(); onOk(); };
+}
+function closeConfirm(){
+  document.getElementById('conf-overlay').classList.remove('open');
+}
+function toggleFav(id){
+  const t=tasks.find(t=>t.id===id);if(!t)return;
+  t.fav=!t.fav;save();render();
+}
+
+// ── ALL TASKS ──────────────────────────────────────────
+function setTF(f,btn){
+  tFilter=f;
+  document.querySelectorAll('.fc').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');renderAll();
+}
+function renderAll(){
+  let list=[...tasks];
+  if(tFilter==='daily')  list=list.filter(t=>t.recurrence?.type==='daily'||!t.recurrence);
+  if(tFilter==='weekly') list=list.filter(t=>t.recurrence?.type==='weekly');
+  if(tFilter==='monthly')list=list.filter(t=>t.recurrence?.type==='monthly');
+  if(tFilter==='high')   list=list.filter(t=>t.priority==='high');
+  const el=document.getElementById('all-list');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="ei">📋</div><div class="et">אין משימות</div></div>`;return}
+  el.innerHTML=list.map(t=>tHtml(t,todayStr(),false)).join('');
+}
+
+// ── WEEKLY ─────────────────────────────────────────────
+function renderWeekly(){
+  const days=pastDays(7);let tt=0,td=0;
+  const dd=days.map(d=>{
+    const ds=dateStr(d),du=tasks.filter(t=>due(t,d)),dn=du.filter(t=>done(t,ds));
+    tt+=du.length;td+=dn.length;
+    return{d,ds,due:du.length,done:dn.length,lbl:DS[d.getDay()]};
+  });
+  const pct=tt?Math.round(td/tt*100):0;
+  document.getElementById('w-stats').innerHTML=`
+    <div class="sc"><div class="sn">${tt}</div><div class="sl">סה"כ השבוע</div></div>
+    <div class="sc"><div class="sn" style="color:var(--al)">${td}</div><div class="sl">הושלמו</div></div>
+    <div class="sc"><div class="sn">${pct}%</div><div class="sl">אחוז השלמה</div></div>`;
+  const W=340,H=160,pL=14,pR=14,pT=14,pB=32,cW=W-pL-pR,cH=H-pT-pB;
+  const mv=Math.max(...dd.map(d=>d.due),1),bw=cW/7;let svg='';
+  dd.forEach((d,i)=>{
+    const x=pL+i*bw,bx=x+4,bw2=bw-8;
+    const tH=(d.due/mv)*cH,dH=(d.done/mv)*cH,ty=pT+cH-tH,dy=pT+cH-dH;
+    const isT=d.ds===todayStr();
+    if(d.due>0)svg+=`<rect x="${bx}" y="${ty.toFixed(1)}" width="${bw2}" height="${tH.toFixed(1)}" rx="5" fill="var(--border)"/>`;
+    if(d.done>0)svg+=`<rect x="${bx}" y="${dy.toFixed(1)}" width="${bw2}" height="${dH.toFixed(1)}" rx="5" fill="var(--green)"/>`;
+    svg+=`<text x="${(bx+bw2/2).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="11" fill="${isT?'var(--accent)':'var(--muted)'}" font-weight="${isT?700:400}" font-family="Heebo">${d.lbl}</text>`;
+  });
+  document.getElementById('w-chart').innerHTML=svg;
+  document.getElementById('w-break').innerHTML=dd.map(d=>{
+    const p=d.due>0?Math.round(d.done/d.due*100):0,isT=d.ds===todayStr();
+    const col=p>=75?'var(--al)':p>=40?'var(--orange)':'var(--red)';
+    return `<div class="br">
+      <div class="db" style="background:${isT?'var(--accent)':'var(--surface2)'};color:${isT?'#fff':'var(--text2)'}">${d.lbl}</div>
+      <div class="bi"><div class="bn">${DF[d.d.getDay()]} — ${d.d.getDate()}/${d.d.getMonth()+1}</div><div class="bs">${d.done} מתוך ${d.due}</div></div>
+      <div class="bp" style="color:${d.due===0?'var(--muted)':col}">${d.due===0?'—':p+'%'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MONTHLY ────────────────────────────────────────────
+function renderMonthly(){
+  const days=pastDays(30),wks=[days.slice(0,7),days.slice(7,14),days.slice(14,21),days.slice(21,30)];
+  let tt=0,td=0;
+  const wd=wks.map((wdays,wi)=>{
+    let du=0,dn=0;
+    wdays.forEach(d=>{const ds=dateStr(d),dut=tasks.filter(t=>due(t,d)),dnt=dut.filter(t=>done(t,ds));du+=dut.length;dn+=dnt.length});
+    tt+=du;td+=dn;
+    const s=wdays[0],e=wdays[wdays.length-1];
+    return{due:du,done:dn,lbl:`שבוע ${wi+1}`,rng:`${s.getDate()}/${s.getMonth()+1}–${e.getDate()}/${e.getMonth()+1}`};
+  });
+  const pct=tt?Math.round(td/tt*100):0;
+  document.getElementById('m-stats').innerHTML=`
+    <div class="sc"><div class="sn">${tt}</div><div class="sl">סה"כ 30 יום</div></div>
+    <div class="sc"><div class="sn" style="color:var(--al)">${td}</div><div class="sl">הושלמו</div></div>
+    <div class="sc"><div class="sn">${pct}%</div><div class="sl">אחוז השלמה</div></div>`;
+  const cx=90,cy=90,R=62;let pie='';
+  if(!tt){pie=`<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="var(--muted)" font-family="Heebo">אין נתונים</text>`;}
+  else{
+    const a=(pct/100)*2*Math.PI;
+    if(pct===100)pie=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--green)"/>`;
+    else if(pct===0)pie=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--border)"/>`;
+    else{const x2=cx+R*Math.sin(a),y2=cy-R*Math.cos(a),lg=a>Math.PI?1:0;pie=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--border)"/><path d="M${cx},${cy} L${cx},${cy-R} A${R},${R} 0 ${lg},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="var(--green)"/>`;}
+    pie+=`<circle cx="${cx}" cy="${cy}" r="${(R*.52).toFixed(1)}" fill="white"/>
+      <text x="${cx}" y="${cy-5}" text-anchor="middle" font-size="22" font-weight="900" fill="var(--accent)" font-family="Heebo">${pct}%</text>
+      <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Heebo">השלמה</text>
+      <rect x="172" y="55" width="11" height="11" rx="3" fill="var(--green)"/>
+      <text x="188" y="65" font-size="12" fill="var(--text2)" font-family="Heebo">הושלמו (${td})</text>
+      <rect x="172" y="75" width="11" height="11" rx="3" fill="var(--border)"/>
+      <text x="188" y="85" font-size="12" fill="var(--text2)" font-family="Heebo">לא הושלמו (${tt-td})</text>`;
+  }
+  document.getElementById('m-pie').innerHTML=pie;
+  const bc=['#059669','#2563eb','#d97706','#0f2444'];
+  const W=300,H=160,pL=14,pR=14,pT=14,pB=32,cW=W-pL-pR,cH=H-pT-pB;
+  const mv=Math.max(...wd.map(d=>d.due),1),bw=cW/4;let bar='';
+  wd.forEach((d,i)=>{
+    const x=pL+i*bw,bx=x+8,bw2=bw-16;
+    const tH=(d.due/mv)*cH,dH=(d.done/mv)*cH,ty=pT+cH-tH,dy=pT+cH-dH;
+    if(d.due>0)bar+=`<rect x="${bx}" y="${ty.toFixed(1)}" width="${bw2}" height="${tH.toFixed(1)}" rx="6" fill="var(--border)"/>`;
+    if(d.done>0)bar+=`<rect x="${bx}" y="${dy.toFixed(1)}" width="${bw2}" height="${dH.toFixed(1)}" rx="6" fill="${bc[i]}"/>`;
+    bar+=`<text x="${(bx+bw2/2).toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Heebo">${d.lbl}</text>`;
+    if(d.due>0){const wp=Math.round(d.done/d.due*100);bar+=`<text x="${(bx+bw2/2).toFixed(1)}" y="${(ty-4).toFixed(1)}" text-anchor="middle" font-size="10" fill="${bc[i]}" font-weight="700" font-family="Heebo">${wp}%</text>`;}
+  });
+  document.getElementById('m-bar').innerHTML=bar;
+  document.getElementById('m-break').innerHTML=wd.map((d,i)=>{
+    const p=d.due>0?Math.round(d.done/d.due*100):0,col=p>=75?'var(--al)':p>=40?'var(--orange)':'var(--red)';
+    return `<div class="br">
+      <div class="db" style="background:${bc[i]};color:#fff;font-size:13px">ש${i+1}</div>
+      <div class="bi"><div class="bn">${d.lbl} (${d.rng})</div><div class="bs">${d.done} מתוך ${d.due}</div></div>
+      <div class="bp" style="color:${d.due===0?'var(--muted)':col}">${d.due===0?'—':p+'%'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── ANALYSIS (DONUTS) ──────────────────────────────────
+function donut(pct,color,label,size){
+  size=size||110;const cx=size/2,cy=size/2,R=size*.38,sw=size*.13;
+  const circ=2*Math.PI*R,dash=(pct/100)*circ,gap=circ-dash;
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#e2ddd6" stroke-width="${sw}" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${color}" stroke-width="${sw}"
+      stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="${size*.19}" font-weight="900" fill="${color}" font-family="Heebo">${pct}%</text>
+    ${label?`<text x="${cx}" y="${cy+size*.17}" text-anchor="middle" font-size="${size*.1}" fill="#999" font-family="Heebo">${label}</text>`:''}
+  </svg>`;
+}
+function calcStats(arr,days){
+  return arr.map((t,i)=>{
+    const du=days.filter(d=>due(t,d)),dn=du.filter(d=>done(t,dateStr(d)));
+    return{t,i,color:DC[i%DC.length],pct:du.length?Math.round(dn.length/du.length*100):0,due:du.length,done:dn.length};
+  }).sort((a,b)=>b.pct-a.pct);
+}
+function streak(){
+  let s=0;const d=new Date();
+  for(let i=0;i<365;i++){
+    const ds=dateStr(d),du=tasks.filter(t=>due(t,d));
+    if(!du.length){d.setDate(d.getDate()-1);continue}
+    if(!du.every(t=>done(t,ds)))break;
+    s++;d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+function setScope(s,btn){
+  aScope=s;
+  document.querySelectorAll('.sc3').forEach(c=>c.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('task-sw').classList.toggle('vis',s==='task');
+  document.getElementById('cat-sw').classList.toggle('vis',s==='category');
+  if(s==='task')document.getElementById('task-sel').innerHTML=tasks.map(t=>`<option value="${t.id}">${esc(t.text)}</option>`).join('');
+  if(s==='category'){const cats=[...new Set(tasks.map(t=>t.category).filter(Boolean))];document.getElementById('cat-sel').innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');}
+  renderA();
+}
+function setPeriod(p,btn){
+  aPeriod=p;document.querySelectorAll('.pc').forEach(c=>c.classList.remove('active'));btn.classList.add('active');renderA();
+}
+function renderA(){
+  const days=pastDays(aPeriod),cont=document.getElementById('a-content');
+  if(!tasks.length){cont.innerHTML=`<div class="empty"><div class="ei">📈</div><div class="et">הוסף משימות לניתוח</div></div>`;return}
+  if(aScope==='all')renderAAll(days,cont);
+  else if(aScope==='fav'){
+    const favs=tasks.filter(t=>t.fav);
+    if(!favs.length){cont.innerHTML=`<div class="empty"><div class="ei">⭐</div><div class="et">אין מועדפים עדיין<br>לחץ ⭐ על משימה כדי להוסיף</div></div>`;return}
+    renderAList(favs,days,cont,'⭐ מועדפים');
+  }
+  else if(aScope==='task'){const id=parseInt(document.getElementById('task-sel').value);const t=tasks.find(t=>t.id===id);if(t)renderAList([t],days,cont,'🎯 '+t.text);}
+  else{const cat=document.getElementById('cat-sel').value;renderAList(tasks.filter(t=>t.category===cat),days,cont,'🗂 '+cat);}
+}
+function renderAAll(days,cont){
+  let tt=0,td=0;
+  days.forEach(d=>{const ds=dateStr(d),du=tasks.filter(t=>due(t,d));tt+=du.length;td+=du.filter(t=>done(t,ds)).length});
+  const pct=tt?Math.round(td/tt*100):0,str=streak();
+  const bc=pct>=75?'#52b788':pct>=40?'#f4a261':'#e63946';
+  const stats=calcStats(tasks,days);
+  const mini=stats.slice(0,6).map(s=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">
+      ${donut(s.pct,s.color,'',80)}
+      <div style="font-size:11px;font-weight:600;text-align:center;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.t.text)}</div>
+      <div style="font-size:10px;color:var(--muted)">${s.done}/${s.due}</div>
+    </div>`).join('');
+  cont.innerHTML=`
+    <div class="srow" style="margin:10px 0 0">
+      <div class="sc"><div class="sn">${pct}%</div><div class="sl">ממוצע כולל</div></div>
+      <div class="sc"><div class="sn" style="color:var(--orange)">${str}🔥</div><div class="sl">רצף ימים</div></div>
+      <div class="sc"><div class="sn">${tasks.length}</div><div class="sl">משימות</div></div>
+    </div>
+    <div class="cw" style="text-align:center">
+      <div class="ct">אחוז השלמה כולל</div>
+      <div class="cs">${aPeriod} ימים אחרונים</div>
+      <div style="display:flex;justify-content:center">${donut(pct,bc,'הושלם',160)}</div>
+      <div style="margin-top:8px;font-size:13px;color:var(--text2)">${td} מתוך ${tt} משימות</div>
+    </div>
+    <div class="cw"><div class="ct">🏆 דירוג משימות</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding-top:8px">${mini}</div>
+    </div>`;
+}
+function renderAList(arr,days,cont,title){
+  if(!arr.length){cont.innerHTML=`<div class="empty"><div class="ei">🔍</div><div class="et">אין משימות</div></div>`;return}
+  const stats=calcStats(arr,days);
+  const dh=stats.length===1
+    ?`<div style="display:flex;justify-content:center;margin:8px 0 4px">${donut(stats[0].pct,stats[0].color,'הושלם',160)}</div><div style="text-align:center;font-size:13px;color:var(--text2)">${stats[0].done} מתוך ${stats[0].due} ימים</div>`
+    :`<div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding-top:6px">${stats.map(s=>`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0">${donut(s.pct,s.color,'',86)}<div style="font-size:11px;font-weight:600;text-align:center;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.t.text)}</div><div style="font-size:10px;color:var(--muted)">${s.done}/${s.due}</div></div>`).join('')}</div>`;
+  const medals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣'];
+  const lh=stats.map((s,i)=>{
+    const col=s.pct>=75?'var(--al)':s.pct>=40?'var(--orange)':'var(--red)';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:16px;flex-shrink:0">${medals[i]||'•'}</span>
+      <div style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.t.text)}</div><div style="font-size:11px;color:var(--muted)">${s.done} מתוך ${s.due} ימים</div></div>
+      <span style="font-size:17px;font-weight:900;color:${col};flex-shrink:0">${s.pct}%</span>
+    </div>`;
+  }).join('');
+  cont.innerHTML=`<div class="cw"><div class="ct">${esc(title)}</div><div class="cs" style="margin-bottom:0">${aPeriod} ימים</div>${dh}</div><div class="cw"><div class="ct">פירוט</div>${lh}</div>`;
+}
+
+// ── MODAL — accordion flow ─────────────────────────────
+
+const CAT_COLORS = {
+  'יהדות':'#6b4fa0','כושר':'#1a8c7e','בריאות':'#2d8a5f','היגיינה':'#3a86c8',
+  'טיפוח':'#b05aaa','תזונה':'#c87d2a','עבודה':'#3d5a8a','לימוד':'#5a7a3d',
+  'בית':'#8a6a3d','כספים':'#3d7a6a','יצירה':'#7a3d6a','חברתי':'#3d6a8a',
+  'מועדפים':'#d4820a'
+};
+function getCatColor(cat){ return CAT_COLORS[cat]||'#5a6a7a'; }
+function getCatEmoji(cat){
+  const m={'יהדות':'✡️','כושר':'💪','בריאות':'🏥','היגיינה':'🚿','טיפוח':'🧴',
+    'תזונה':'🥗','עבודה':'💼','לימוד':'📚','בית':'🏠','כספים':'💰',
+    'יצירה':'🎨','חברתי':'👫','מועדפים':'⭐'};
+  return m[cat]||'📌';
+}
+
+let selectedCat = '';
+
+function openModal(){
+  editId=null;
+  selectedCat='';
+  document.getElementById('m-title').textContent='משימה חדשה';
+  document.getElementById('f-text').value='';
+  document.getElementById('f-cat').value='';
+  document.getElementById('f-time').value='08:00';
+  document.getElementById('f-dom').value='1';
+  hideSug();fDays=[];
+  document.querySelectorAll('.dc').forEach(c=>c.classList.remove('sel'));
+  setPri('mid');setRec('daily');
+  // Reset sections
+  document.getElementById('task-section').style.display='none';
+  document.getElementById('details-section').style.display='none';
+  renderCatGrid();
+  document.getElementById('mo').classList.add('open');
+}
+
+function renderCatGrid(){
+  const cats = allCats();
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = cats.map(c=>{
+    const color = getCatColor(c);
+    const isSelected = c === selectedCat;
+    const custom = loadCustomCats().includes(c);
+    return `<div id="cat-btn-${esc(c)}" style="
+        display:inline-flex;align-items:center;gap:5px;
+        background:${isSelected ? color : color+'18'};
+        border:2px solid ${isSelected ? color : color+'44'};
+        border-radius:22px;padding:8px 14px;cursor:pointer;
+        font-size:13px;font-weight:700;
+        color:${isSelected ? '#fff' : color};
+        transition:all .18s;user-select:none"
+      onclick="selectCat('${esc(c)}')">
+      ${getCatEmoji(c)} ${esc(c)}
+      ${custom?`<span onclick="event.stopPropagation();delCatConfirm('${esc(c)}')"
+        style="font-size:11px;opacity:.7;cursor:pointer;margin-right:2px">✕</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function selectCat(cat){
+  selectedCat = cat;
+  document.getElementById('f-cat').value = cat;
+  renderCatGrid(); // re-render to highlight selected
+
+  // Show task suggestions
+  renderTaskSugg(cat);
+  document.getElementById('task-section').style.display = 'block';
+
+  // Reset task + details
+  document.getElementById('f-text').value = '';
+  document.getElementById('details-section').style.display = 'none';
+  hideSug();
+
+  // Scroll task section into view
+  setTimeout(()=>{
+    document.getElementById('task-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }, 100);
+}
+
+function renderTaskSugg(cat){
+  const matched = SUGG.filter(g => g.cat===cat || g.kw.some(k=>cat.includes(k)||k.includes(cat)));
+  const items = [...new Set(matched.flatMap(g=>g.items))].slice(0,14);
+  const el = document.getElementById('task-sugg-chips');
+  const color = getCatColor(cat);
+  el.innerHTML = items.map(x=>
+    `<button style="
+        background:${color}14;border:1.5px solid ${color}40;border-radius:20px;
+        padding:7px 13px;font-family:Heebo,sans-serif;font-size:13px;
+        font-weight:600;color:${color};cursor:pointer;transition:all .18s"
+      data-t="${esc(x)}"
+      onclick="pickTaskSugg(this,'${esc(cat)}')"
+      onmouseover="this.style.background='${color}28'"
+      onmouseout="this.style.background='${color}14'"
+    >${esc(x)}</button>`
+  ).join('');
+
+  // Also show "type your own" option — already visible in HTML
+}
+
+function pickTaskSugg(btn, cat){
+  document.getElementById('f-text').value = btn.dataset.t;
+  // Highlight picked
+  document.querySelectorAll('#task-sugg-chips button').forEach(b=>{
+    const c = getCatColor(cat);
+    b.style.background = c+'14';
+    b.style.borderColor = c+'40';
+    b.style.color = c;
+    b.style.fontWeight = '600';
+  });
+  const c = getCatColor(cat);
+  btn.style.background = c;
+  btn.style.color = '#fff';
+  btn.style.borderColor = c;
+  // Reveal details
+  showDetails();
+}
+
+// Show details section when user has a task name
+function showDetailsOnType(){
+  const v = document.getElementById('f-text').value.trim();
+  if(v && selectedCat){ showDetails(); }
+}
+
+function showDetails(){
+  document.getElementById('details-section').style.display = 'block';
+  setTimeout(()=>{
+    document.getElementById('details-section').scrollIntoView({behavior:'smooth',block:'nearest'});
+  },100);
+}
+
+function addCatFromInput(){
+  const inp = document.getElementById('new-cat-inp');
+  const v = inp.value.trim();
+  if(!v) return;
+  addCustomCat(v);
+  inp.value='';
+  selectCat(v); // select it immediately
+}
+
+function delCatConfirm(name){
+  showConfirm(
+    'מחיקת קטגוריה',
+    'בטוח שאתה רוצה למחוק את "'+name+'"?',
+    ()=>{
+      deleteCustomCat(name);
+      if(selectedCat===name){
+        selectedCat='';
+        document.getElementById('task-section').style.display='none';
+        document.getElementById('details-section').style.display='none';
+      }
+      renderCatGrid();
+    }
+  );
+}
+
+function pickSugg(el){
+  document.getElementById('f-text').value = el.dataset.t;
+  hideSug();
+  if(selectedCat) showDetails();
+}
+function closeModal(){document.getElementById('mo').classList.remove('open')}
+function closeBg(e){if(e.target===document.getElementById('mo'))closeModal()}
+function setPri(p){
+  fPri=p;
+  document.getElementById('p-h').className='pb2'+(p==='high'?' sh':'');
+  document.getElementById('p-m').className='pb2'+(p==='mid'?' sm':'');
+  document.getElementById('p-l').className='pb2'+(p==='low'?' sl':'');
+}
+function setRec(r){
+  fRec=r;
+  ['daily','weekly','monthly'].forEach(x=>document.getElementById('r-'+x).className='ro'+(r===x?' sel':''));
+  document.getElementById('g-days').style.display=r==='weekly'?'':'none';
+  document.getElementById('g-dom').style.display=r==='monthly'?'':'none';
+}
+function toggleDay(d){
+  const i=fDays.indexOf(d);if(i>=0)fDays.splice(i,1);else fDays.push(d);
+  document.querySelectorAll('.dc').forEach(c=>c.classList.toggle('sel',fDays.includes(parseInt(c.dataset.d))));
+}
+function saveTask(){
+  const text=document.getElementById('f-text').value.trim();
+  if(!text){alert('נא להזין שם משימה');return}
+  if(fRec==='weekly'&&fDays.length===0){alert('נא לבחור לפחות יום אחד');return}
+  const rec={type:fRec};
+  if(fRec==='weekly')rec.days=[...fDays].sort();
+  if(fRec==='monthly')rec.dayOfMonth=parseInt(document.getElementById('f-dom').value)||1;
+  const task={
+    id:editId||Date.now(),text,priority:fPri,
+    category:document.getElementById('f-cat').value.trim(),
+    recurrence:rec,notifTime:document.getElementById('f-time').value,
+    completions:editId?(tasks.find(t=>t.id===editId)?.completions||{}):{},
+  };
+  if(editId){const i=tasks.findIndex(t=>t.id===editId);if(i>=0)tasks[i]=task;}
+  else tasks.unshift(task);
+  save();closeModal();render();
+  scheduleAllNotifs();
+}
+
+// ═══════════════════════════════════════════════════
+// NOTIFICATIONS — Scheduled Triggers
+// ═══════════════════════════════════════════════════
+
+function supportsTriggered(){
+  return typeof TimestampTrigger !== 'undefined';
+}
+
+// Schedule notifications via TimestampTrigger (fires even when app/phone asleep)
+async function scheduleAllNotifs(){
+  if(Notification.permission !== 'granted') return;
+  if(!('serviceWorker' in navigator)) return;
+
+  let reg;
+  try { reg = await navigator.serviceWorker.ready; } catch(e){ return; }
+
+  // Clear previously scheduled triggered notifications
+  try {
+    const existing = await reg.getNotifications({ includeTriggered: true });
+    existing.forEach(n => { if((n.tag||'').startsWith('sched-')) n.close(); });
+  } catch(e){}
+
+  if(!supportsTriggered()){
+    console.log('[Notif] TimestampTrigger not supported — relying on interval');
+    updateDiag();
+    return;
+  }
+
+  const now = new Date();
+  let scheduled = 0;
+
+  for(let d = 0; d < 14; d++){
+    const day = new Date();
+    day.setDate(day.getDate() + d);
+    day.setHours(0, 0, 0, 0);
+    const ds = dateStr(day);
+
+    for(const t of tasks){
+      if(!t.notifTime) continue;
+      if(!due(t, day)) continue;
+      if(done(t, ds)) continue;
+
+      const [h, m] = t.notifTime.split(':').map(Number);
+      const fireAt = new Date(day);
+      fireAt.setHours(h, m, 0, 0);
+      if(fireAt <= now) continue; // already past
+
+      const tag = 'sched-' + t.id + '-' + ds;
+      const body = t.category ? t.category : 'לחץ לסמן כמושלם';
+
+      try {
+        await reg.showNotification('⏰ ' + t.text, {
+          body,
+          icon:        './icon-192.png',
+          badge:       './icon-192.png',
+          tag,
+          showTrigger: new TimestampTrigger(fireAt.getTime()),
+          requireInteraction: true,
+          data: {
+            taskId:  t.id,
+            dateStr: ds,
+            url: location.origin + location.pathname
+          },
+          actions: [
+            { action: 'done',    title: '✅ הושלם' },
+            { action: 'dismiss', title: '✕ סגור'   }
+          ]
+        });
+        scheduled++;
+      } catch(err){
+        console.warn('[Notif] Failed to schedule:', t.text, err.message);
+      }
+    }
+  }
+
+  console.log('[Notif] Scheduled', scheduled, 'triggered notifications for next 14 days');
+  updateDiag();
+}
+
+// Interval fallback (for when app is open and browser lacks TimestampTrigger)
+let _lastMin = '';
+function checkNotifs(){
+  if(Notification.permission !== 'granted') return;
+  const now  = new Date();
+  const hhmm = p2(now.getHours()) + ':' + p2(now.getMinutes());
+  if(hhmm === _lastMin) return;
+  _lastMin = hhmm;
+  const ds    = todayStr();
+  const fired = JSON.parse(localStorage.getItem('nf_'+ds) || '{}');
+  let changed = false;
+  tasks.forEach(t => {
+    if(!t.notifTime || t.notifTime !== hhmm) return;
+    if(!due(t, now)) return;
+    if(fired[t.id] || done(t, ds)) return;
+    sendNotif('\u23f0 '+t.text,
+      t.category ? '\u05e7\u05d8\u05d2\u05d5\u05e8\u05d9\u05d4: '+t.category : '\u05d9\u05d5\u05de\u05df \u05de\u05e9\u05d9\u05de\u05d5\u05ea',
+      'int-'+t.id+'-'+ds, t.id, ds);
+    fired[t.id] = true;
+    changed = true;
+  });
+  if(changed) localStorage.setItem('nf_'+ds, JSON.stringify(fired));
+}
+
+// Core sender — uses reg.showNotification (immediate, no TimestampTrigger)
+function sendNotif(title, body, tag, taskId, ds){
+  if(Notification.permission !== 'granted') return;
+  navigator.serviceWorker.ready
+    .then(reg => reg.showNotification(title, {
+      body:    body || '',
+      icon:    './icon-192.png',
+      badge:   './icon-192.png',
+      tag:     tag  || 'task',
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      data: {
+        taskId:  taskId || null,
+        dateStr: ds || null,
+        url: location.origin + location.pathname
+      },
+      actions: taskId ? [
+        { action: 'done',    title: '✅ הושלם' },
+        { action: 'dismiss', title: '✕ סגור'   }
+      ] : []
+    }))
+    .catch(err => console.warn('[Notif] sendNotif error:', err));
+}
+
+// Test notification — fires immediately so user can verify it works
+function sendTestNotif(){
+  if(Notification.permission !== 'granted'){
+    alert('לא אושרו התראות. לחץ "אפשר" קודם.');
+    return;
+  }
+  const body = supportsTriggered()
+    ? 'מעולה! התראות יגיעו גם כשהאפליקציה סגורה 🎉'
+    : 'עובד! התראות יגיעו כשהאפליקציה פתוחה ברקע 👍';
+  navigator.serviceWorker.ready
+    .then(reg => reg.showNotification('✅ התראות פועלות!', {
+      body,
+      icon:    './icon-192.png',
+      tag:     'test-' + Date.now(),
+      vibrate: [200, 100, 200]
+    }))
+    .then(() => updateDiag())
+    .catch(err => alert('שגיאה: ' + err.message + '\nנסה לרענן את הדף.'));
+}
+
+function showNotifStatus(){
+  const perm = 'Notification' in window ? Notification.permission : 'none';
+  document.getElementById('nb').style.display  = perm==='default'?'flex':'none';
+  document.getElementById('nb2').style.display = perm==='granted'?'flex':'none';
+  if(perm==='granted') updateDiag();
+}
+
+function updateDiag(){
+  const el = document.getElementById('notif-diag');
+  if(!el) return;
+  const hasSW   = 'serviceWorker' in navigator;
+  const hasTrig = typeof TimestampTrigger !== 'undefined';
+  const isStand = window.matchMedia('(display-mode: standalone)').matches;
+  const taskCount = tasks.filter(t=>t.notifTime).length;
+
+  el.innerHTML = [
+    hasSW   ? '✅ Service Worker' : '❌ Service Worker לא נתמך',
+    hasTrig ? '✅ תזמון ברמת OS (TimestampTrigger)' : '⚠️ Chrome חדש נדרש לתזמון ברמת OS',
+    isStand ? '✅ PWA מותקנת' : '⚠️ פתח כ-PWA מותקנת (לא דרך דפדפן)',
+    taskCount > 0 ? '✅ '+taskCount+' משימות עם שעת תזכורת' : '⚠️ אין משימות עם שעת תזכורת',
+  ].join('<br>');
+}
+
+function startNotifs(){
+  scheduleAllNotifs();
+  checkNotifs();
+  setInterval(checkNotifs, 30000);
+}
+
+function askNotif(){
+  if(!('Notification' in window)){ alert('\u05d4\u05d3\u05e4\u05d3\u05e4\u05df \u05dc\u05d0 \u05ea\u05d5\u05de\u05da \u05d1\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea'); return; }
+  if(Notification.permission==='granted'){ showNotifStatus(); startNotifs(); sendTestNotif(); return; }
+  if(Notification.permission==='denied'){
+    alert('\u05d7\u05e1\u05de\u05ea \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u05d1\u05e2\u05d1\u05e8.\n\u05db\u05d3\u05d9 \u05dc\u05d0\u05e4\u05e9\u05e8: \u05d4\u05d2\u05d3\u05e8\u05d5\u05ea Chrome \u2190 \u05d0\u05ea\u05e8\u05d9\u05dd \u2190 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u2190 \u05d0\u05e4\u05e9\u05e8');
+    return;
+  }
+  Notification.requestPermission().then(p => {
+    if(p==='granted'){ showNotifStatus(); startNotifs(); sendTestNotif(); }
+    else alert('\u05dc\u05d0 \u05d0\u05d5\u05e9\u05e8\u05d5 \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea.');
+  });
+}
+
+function initNotifs(){
+  if(!('Notification' in window)) return;
+  showNotifStatus();
+  if(Notification.permission==='granted') startNotifs();
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden){ checkNotifs(); scheduleAllNotifs(); }
+  });
+  if(navigator.serviceWorker){
+    navigator.serviceWorker.addEventListener('message', ev=>{
+      if(!ev.data) return;
+
+      // Direct mark-done (app was open in background)
+      if(ev.data.type === 'MARK_DONE'){
+        applyCompletion(ev.data.taskId, ev.data.dateStr);
+      }
+
+      // List of pending completions stored in SW cache
+      if(ev.data.type === 'PENDING_LIST' && ev.data.pending && ev.data.pending.length){
+        ev.data.pending.forEach(item => applyCompletion(item.taskId, item.dateStr));
+      }
+    });
+  }
+}
+
+// ── TABS ───────────────────────────────────────────────
+function go(name,btn){
+  curTab=name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tb2').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');btn.classList.add('active');
+  document.getElementById('fab').style.display=(name==='weekly'||name==='monthly'||name==='analysis')?'none':'';
+  if(name==='today')renderToday();
+  if(name==='tasks')renderAll();
+  if(name==='weekly')renderWeekly();
+  if(name==='monthly')renderMonthly();
+  if(name==='analysis')renderA();
+}
+function render(){
+  renderToday();renderAll();
+  if(curTab==='weekly')renderWeekly();
+  if(curTab==='monthly')renderMonthly();
+  if(curTab==='analysis')renderA();
+}
+
+// ── INIT ───────────────────────────────────────────────
+renderHeader();
+renderQuote();
+render();
+initNotifs();
+
+// ── Apply any pending completions from SW cache (mark-done from notification) ──
+(function applyPendingCompletions(){
+  // Method 1: URL param (app was opened from notification tap)
+  const p = new URLSearchParams(window.location.search);
+  const urlTaskId = parseInt(p.get('markDone'));
+  const urlDate   = p.get('date') || todayStr();
+  if(urlTaskId){
+    applyCompletion(urlTaskId, urlDate);
+    history.replaceState({}, '', window.location.pathname);
+  }
+
+  // Method 2: Ask SW for any stored pending completions
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+    navigator.serviceWorker.controller.postMessage({ type: 'GET_PENDING' });
+  } else if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(reg => {
+      if(reg.active) reg.active.postMessage({ type: 'GET_PENDING' });
+    }).catch(()=>{});
+  }
+})();
+
+function applyCompletion(taskId, dateStr){
+  const t = tasks.find(t => t.id === taskId);
+  if(!t) return;
+  if(!t.completions) t.completions = {};
+  if(!t.completions[dateStr]){
+    t.completions[dateStr] = true;
+    save(); render();
+  }
+  // Tell SW to clear this pending item
+  if(navigator.serviceWorker && navigator.serviceWorker.controller){
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CLEAR_PENDING', taskId, dateStr
+    });
+  }
+}
+
+// ── SERVICE WORKER ─────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js',{scope:'./'})
+      .then(reg=>{
+        console.log('✅ SW רשום');
+        reg.addEventListener('updatefound',()=>{
+          const w=reg.installing;
+          w.addEventListener('statechange',()=>{
+            if(w.state==='installed'&&navigator.serviceWorker.controller)showUpdateBanner();
+          });
+        });
+      })
+      .catch(()=>{/* Silent — preview env */});
+  });
+}
+
+// ── PWA INSTALL ────────────────────────────────────────
+let dPmt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();dPmt=e;
+  if(!window.matchMedia('(display-mode: standalone)').matches)showInstallBanner();
+});
+window.addEventListener('appinstalled',()=>{const b=document.getElementById('ib2');if(b)b.remove()});
+
+function showInstallBanner(){
+  if(document.getElementById('ib2'))return;
+  const b=document.createElement('div');b.id='ib2';b.className='pwa-b';
+  b.innerHTML=`<span style="font-size:22px;flex-shrink:0">📲</span>
+    <div style="flex:1"><div style="font-weight:700;color:var(--text)">התקן כאפליקציה</div>
+    <div style="color:var(--muted);font-size:11px">עובד אופליין • גישה מהמסך הראשי</div></div>
+    <button onclick="installApp()" style="background:var(--al);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;cursor:pointer">התקן</button>
+    <button onclick="this.closest('#ib2').remove()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px;line-height:1">✕</button>`;
+  document.getElementById('nb').after(b);
+  setTimeout(()=>{if(b.parentNode)b.remove()},15000);
+}
+function installApp(){
+  if(!dPmt)return;
+  dPmt.prompt();
+  dPmt.userChoice.then(()=>{dPmt=null;const b=document.getElementById('ib2');if(b)b.remove()});
+}
+function showUpdateBanner(){
+  if(document.getElementById('ub'))return;
+  const b=document.createElement('div');b.id='ub';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:var(--accent);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-family:Heebo,sans-serif;font-size:14px;font-weight:600';
+  b.innerHTML=`<span>🔄 גרסה חדשה זמינה!</span><button onclick="location.reload()" style="background:rgba(255,255,255,.25);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-family:Heebo,sans-serif;font-weight:700;cursor:pointer">עדכן</button>`;
+  document.body.prepend(b);
+}
+</script>
+</body>
+</html>
